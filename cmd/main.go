@@ -2,11 +2,24 @@ package main
 
 import (
 	"fmt"
-	"github.com/justsushant/envbox/server"
+	"log"
+
 	"github.com/justsushant/envbox/config"
+	"github.com/justsushant/envbox/db"
+	"github.com/justsushant/envbox/server"
 )
 
 func main() {
-	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port))
+	sqliteDB, err := db.NewSqlLiteStorage(config.Envs.SqliteDB)
+	if err != nil {
+		log.Fatal("Error while creating sqlite storage")
+	}
+
+	// err = db.MigrateSqliteDBUp(sqliteDB)
+	// if err != nil {
+	// 	log.Fatal("Error while migrating sqlite db: ", err)
+	// }
+
+	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port), sqliteDB)
 	s.Run()
 }

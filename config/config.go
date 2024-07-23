@@ -8,6 +8,7 @@ import (
 type Config struct {
 	PublicHost string
 	Port string
+	SqliteDB string
 }
 
 var Envs = initConfig()
@@ -21,6 +22,8 @@ func initConfig() *Config {
 	return &Config{
 		PublicHost: getEnv("PUBLIC_HOST", "http://localhost"),
 		Port: getEnv("PORT", "8080"),
+		SqliteDB: getEnv("SQLITE_DB_PATH=", "sqlite/envbox.sqlite3"),
+		// SqliteDB: getEnv("SQLITE_DB_PATH=", ":memory:"),
 	}
 }
 
