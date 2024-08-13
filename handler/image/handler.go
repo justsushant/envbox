@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/justsushant/envbox/types"
 )
-
 type Handler struct {
 	service types.ImageService
 }
@@ -31,7 +30,7 @@ func (h *Handler) GetImages(c *gin.Context) {
 	}
 	if len(data) == 0 {
 		c.JSON(http.StatusOK, gin.H{
-			"error": "No images found",
+			"error": "no images found",
 		})
 		return
 	}

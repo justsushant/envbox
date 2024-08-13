@@ -1,5 +1,5 @@
-## TITLE
+## Env-Box
 
-ENV-BOX is a cloud solution to launch environments directly onto the web.
+Env-Box is a cloud solution to launch environments directly onto the web.
 
 

@@ -7,6 +7,8 @@ import (
 	"github.com/justsushant/envbox/config"
 	"github.com/justsushant/envbox/db"
 	"github.com/justsushant/envbox/server"
+
+	"github.com/justsushant/envbox/utils/docker"
 )
 
 func main() {
@@ -20,6 +22,7 @@ func main() {
 	// 	log.Fatal("Error while migrating sqlite db: ", err)
 	// }
 
-	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port), sqliteDB)
+
+	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port), sqliteDB, utils.NewDockerClient())
 	s.Run()
 }
