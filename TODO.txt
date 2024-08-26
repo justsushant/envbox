@@ -6,3 +6,10 @@
 
 ## Tests
     Write tests for handlers
+    - Get Terminal Pending
+
+
+
+// install some beautiful terminal in jupyter notebook image
+// auto complete, colorgul highlghts and history (up arrow key) works from terminal itself
+

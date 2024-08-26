@@ -5,10 +5,10 @@ import (
 )
 
 type Service struct {
-	store Store
+	store types.ImageStore
 }
 
-func NewService(store Store) types.ImageService {
+func NewService(store types.ImageStore) types.ImageService {
 	return &Service{
 		store: store,
 	}

@@ -33,7 +33,7 @@ func (s *Store) DeleteContainer(id string) error {
 }
 
 func (s *Store) GetAllEnvs() ([]types.Env, error) {
-	rows, err := s.db.Query("SELECT * FROM containers_running")
+	rows, err := s.db.Query("SELECT * FROM containers_running WHERE active = 1")
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *Store) GetAllEnvs() ([]types.Env, error) {
 	var envs []types.Env
 	for rows.Next() {
 		var env types.Env
-		err := rows.Scan(&env.ID, &env.ContainerID, &env.ImageName, &env.Active, &env.CreatedAt)
+		err := rows.Scan(&env.ID, &env.ImageName, &env.ContainerID, &env.AccessLink, &env.Active, &env.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -55,9 +55,17 @@ func (s *Store) GetAllEnvs() ([]types.Env, error) {
 func (s *Store) GetContainerByID(id string) (types.Env, error) {
 	var env types.Env
 	row := s.db.QueryRow("SELECT * FROM containers_running WHERE id = ?", id)
-	err := row.Scan(&env.ID, &env.ContainerID, &env.ImageName, &env.Active, &env.CreatedAt)
+	err := row.Scan(&env.ID, &env.ImageName, &env.ContainerID, &env.AccessLink, &env.Active, &env.CreatedAt)
 	if err != nil {
 		return types.Env{}, err
 	}
 	return env, nil
+}
+
+func (s *Store) UpdateContainerAccessLink(containerID, accessLink string) error {
+	_, err := s.db.Exec("UPDATE containers_running SET accessLink = ? WHERE containerID = ?", accessLink, containerID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -17,10 +17,11 @@ func main() {
 		log.Fatal("Error while creating sqlite storage")
 	}
 
-	// err = db.MigrateSqliteDBUp(sqliteDB)
-	// if err != nil {
-	// 	log.Fatal("Error while migrating sqlite db: ", err)
-	// }
+	
+	err = db.MigrateSqliteDBUp(sqliteDB)
+	if err != nil {
+		log.Fatal("Error while migrating sqlite db: ", err)
+	}
 
 
 	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port), sqliteDB, utils.NewDockerClient())

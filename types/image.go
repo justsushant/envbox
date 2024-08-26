@@ -9,3 +9,8 @@ type Image struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
 }
+
+type ImageStore interface {
+	GetImages() ([]Image, error)
+	GetImageByID(int) (Image, error)
+}

@@ -9,14 +9,14 @@ type Store struct {
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) Store {
-	return Store{
+func NewStore(db *sql.DB) types.ImageStore {
+	return &Store{
 		db: db,
 	}
 }
 
 func (s *Store) GetImages() ([]types.Image, error) {
-	rows, err := s.db.Query("SELECT id, name, path FROM images")
+	rows, err := s.db.Query("SELECT id, name, path FROM mst_images")
 	if err != nil {
 		return nil, err
 	}
@@ -32,4 +32,13 @@ func (s *Store) GetImages() ([]types.Image, error) {
 		images = append(images, image)
 	}
 	return images, nil
+}
+
+func (s *Store) GetImageByID(id int) (types.Image, error) {
+	var image types.Image
+	err := s.db.QueryRow("SELECT id, name, path FROM mst_images WHERE id = ?", id).Scan(&image.ID, &image.Name, &image.Path)
+	if err != nil {
+		return types.Image{}, err
+	}
+	return image, nil
 }

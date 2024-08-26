@@ -24,15 +24,20 @@ func (h *Handler) GetImages(c *gin.Context) {
 	data, err := h.service.GetImages()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": false,
 			"error": err.Error(),
 		})
 		return
 	}
 	if len(data) == 0 {
 		c.JSON(http.StatusOK, gin.H{
+			"status": false,
 			"error": "no images found",
 		})
 		return
 	}
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"data":   data,
+	})
 }

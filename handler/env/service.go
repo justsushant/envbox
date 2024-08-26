@@ -11,29 +11,65 @@ import (
 
 	"github.com/justsushant/envbox/types"
 	"github.com/justsushant/envbox/utils"
+	dockerTypes "github.com/docker/docker/api/types"
 )
 
 var containerAddr = fmt.Sprintf("http://127.0.0.1:%s/tree?token=", utils.DEFAULT_CONTAINER_PORT)
 
 type Service struct {
-	store types.EnvStore
+	envStore types.EnvStore
+	imgStore types.ImageStore
 }
 
-func NewService(store types.EnvStore) *Service {
+func NewService(envStore types.EnvStore, imgStore types.ImageStore) *Service {
 	return &Service{
-		store: store,
+		envStore: envStore,
+		imgStore: imgStore,
 	}
 }
 
 func (s *Service) GetAllEnvs() ([]types.Env, error) {
-	return s.store.GetAllEnvs()
+	return s.envStore.GetAllEnvs()
+}
+
+func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.HijackedResponse, error) {
+	// getting container data from store
+	env, err := s.envStore.GetContainerByID(id)
+	if err != nil {
+		return dockerTypes.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
+	}
+	if !env.Active {
+		return dockerTypes.HijackedResponse{}, fmt.Errorf("container is already stopped")
+	}
+
+	// creating exec for the container
+	execID, err := client.ContainerExecCreate(context.Background(), env.ContainerID, container.ExecOptions{
+        AttachStdin:  true,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty:          true,
+        Cmd:          []string{"sh"},
+    })
+    if err != nil {
+        fmt.Println(err)
+        return dockerTypes.HijackedResponse{}, err
+    }
+
+	// extracting response object from exec
+	hijackedResp, err := client.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
+    if err != nil {
+        fmt.Println(err)
+        return dockerTypes.HijackedResponse{}, err
+    }
+
+	return hijackedResp, nil
 }
 
 func (s *Service) KillEnv(client *client.Client, id string) (string, error) {
 	ctx := context.Background()
 
 	// get the container details from db
-	env, err := s.store.GetContainerByID(id)
+	env, err := s.envStore.GetContainerByID(id)
 	fmt.Println(env)
 	if err != nil {
 		return "", fmt.Errorf("failed to get the container details: %v", err)
@@ -54,7 +90,7 @@ func (s *Service) KillEnv(client *client.Client, id string) (string, error) {
 	}
 
 	// sets the active to false in the db
-	if err := s.store.DeleteContainer(id); err != nil {
+	if err := s.envStore.DeleteContainer(id); err != nil {
 		return "", fmt.Errorf("failed to inactive the container in database: %v", err)
 	}
 
@@ -63,6 +99,13 @@ func (s *Service) KillEnv(client *client.Client, id string) (string, error) {
 
 func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (string, error) {
 	ctx := context.Background()
+
+	// get image details from db
+	image, err := s.imgStore.GetImageByID(p.ImageID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get the image details: %v", err)
+	}
+	
 
 	// gets a random free port on the host
 	hostPort, err := utils.GetRandomFreePort()
@@ -81,7 +124,7 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 
 	// creates the container
 	resp, err := client.ContainerCreate(ctx, &container.Config{
-		Image: p.ImageName,
+		Image: image.Path,
 		Cmd:   generateJupyterNoteBookStartCommand(notebookPwd, utils.DEFAULT_CONTAINER_PORT),
 		ExposedPorts: nat.PortSet{
 			utils.DEFAULT_CONTAINER_PORT + "/tcp": {},
@@ -99,11 +142,10 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 	}
 	
 	// save the container details in the db
-	if err := s.store.SaveContainer(resp.ID, p.ImageName); err != nil {
+	if err := s.envStore.SaveContainer(resp.ID, image.Name); err != nil {
 		fmt.Println("error while saving container details in the database: ", err)
 	}
 
-	fmt.Println("container id: ", resp.ID)
 
 	// gets the logs from the container
 	// we parse it to know when the notebook service has started
@@ -117,7 +159,12 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 			}
 		case log := <-logsChan:
 			if strings.Contains(log, containerAddr) {
-				return fmt.Sprintf("http://127.0.0.1:%s/tree?token=%s",hostPort,notebookPwd), nil
+				accessLink := fmt.Sprintf("http://127.0.0.1:%s/tree?token=%s",hostPort,notebookPwd)
+				if err := s.envStore.UpdateContainerAccessLink(resp.ID, accessLink); err != nil {
+					fmt.Println("error while updating the access link: ", err)
+				}
+
+				return accessLink, nil
 			}
 		}
 	}
