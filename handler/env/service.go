@@ -2,6 +2,7 @@ package env
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
+	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/justsushant/envbox/types"
 	"github.com/justsushant/envbox/utils"
-	dockerTypes "github.com/docker/docker/api/types"
 )
 
 var containerAddr = fmt.Sprintf("http://127.0.0.1:%s/tree?token=", utils.DEFAULT_CONTAINER_PORT)
@@ -36,6 +37,9 @@ func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.Hij
 	// getting container data from store
 	env, err := s.envStore.GetContainerByID(id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return dockerTypes.HijackedResponse{}, fmt.Errorf("no container found: %v", err)
+		}
 		return dockerTypes.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
 	}
 	if !env.Active {
@@ -70,8 +74,10 @@ func (s *Service) KillEnv(client *client.Client, id string) (string, error) {
 
 	// get the container details from db
 	env, err := s.envStore.GetContainerByID(id)
-	fmt.Println(env)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("no container found: %v", err)
+		}
 		return "", fmt.Errorf("failed to get the container details: %v", err)
 	}
 	if !env.Active {

@@ -35,6 +35,9 @@ func (s *Store) DeleteContainer(id string) error {
 func (s *Store) GetAllEnvs() ([]types.Env, error) {
 	rows, err := s.db.Query("SELECT * FROM containers_running WHERE active = 1")
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return []types.Env{}, sql.ErrNoRows
+		}
 		return nil, err
 	}
 	defer rows.Close()
@@ -57,6 +60,9 @@ func (s *Store) GetContainerByID(id string) (types.Env, error) {
 	row := s.db.QueryRow("SELECT * FROM containers_running WHERE id = ?", id)
 	err := row.Scan(&env.ID, &env.ImageName, &env.ContainerID, &env.AccessLink, &env.Active, &env.CreatedAt)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return types.Env{}, sql.ErrNoRows
+		}
 		return types.Env{}, err
 	}
 	return env, nil
