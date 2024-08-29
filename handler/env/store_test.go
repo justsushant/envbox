@@ -23,10 +23,10 @@ func TestSaveContainer(t *testing.T) {
 
 	// save container test
 	mock.ExpectExec("INSERT INTO containers_running").
-		WithArgs("testContainerID", "testImageName").
+		WithArgs("testContainerID", 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	if err = stubStore.SaveContainer("testContainerID", "testImageName"); err != nil {
+	if err = stubStore.SaveContainer("testContainerID", 1); err != nil {
 		t.Fatalf("Error while saving details in DB: %v", err)
 	}
 
@@ -306,7 +306,6 @@ func TestGetContainerByID(t *testing.T) {
 		})
 	}
 }
-
 
 func TestUpdateContainerAccessLink(t *testing.T) {
 	tt := []struct {

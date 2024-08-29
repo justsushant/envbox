@@ -7,13 +7,13 @@ import (
 
 type EnvService interface {
 	CreateEnv(*client.Client, CreateEnvPayload) (string, error)
-	KillEnv(*client.Client, string) (string, error)
+	KillEnv(*client.Client, string) error
 	GetAllEnvs() ([]Env, error)
 	GetTerminal(*client.Client, string) (dockerTypes.HijackedResponse, error)
 }
 
 type EnvStore interface {
-	SaveContainer(string, string) error
+	SaveContainer(string, int) error
 	DeleteContainer(string) error
 	GetAllEnvs() ([]Env, error)
 	GetContainerByID(string) (Env, error)

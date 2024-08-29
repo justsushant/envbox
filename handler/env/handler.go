@@ -58,12 +58,12 @@ func (h *Handler) createEnv(c *gin.Context) {
 
 func (h *Handler) killEnv(c *gin.Context) {
 	id := c.Param("id")
-	resp, err := h.service.KillEnv(h.client, id)
+	err := h.service.KillEnv(h.client, id)
 	if err != nil {
 		c.JSON(500, gin.H{"status": false, "error": err.Error()})
 		return
 	}
-	c.JSON(200, gin.H{"status": true, "message": resp})
+	c.JSON(200, gin.H{"status": true, "message": "container stopped and removed successfully"})
 }
 
 func (h *Handler) getAllEnvs(c *gin.Context) {

@@ -25,9 +25,9 @@ func(m *MockEnvService) CreateEnv(client *client.Client, payload types.CreateEnv
 	return args.String(0), args.Error(1)
 }
 
-func(m *MockEnvService) KillEnv(client *client.Client, id string) (string, error) {
+func(m *MockEnvService) KillEnv(client *client.Client, id string) error {
 	args := m.Called(client, id)
-	return args.String(0), args.Error(1)
+	return args.Error(0)
 }
 
 func(m *MockEnvService) GetAllEnvs() ([]types.Env, error) {
@@ -207,9 +207,9 @@ func TestKillEnvHandler(t *testing.T) {
 		{
 			name: "happy path kill env",
 			id: "1",
-			mockServiceOutput: []interface{}{"testAccessLink", nil},
+			mockServiceOutput: []interface{}{nil},
 			expectedStatus: http.StatusOK,
-			expectedResponse: `{"status": true,"message": "testAccessLink"}`,
+			expectedResponse: `{"status": true,"message": "container stopped and removed successfully"}`,
 			
 		},
 		{
@@ -217,7 +217,7 @@ func TestKillEnvHandler(t *testing.T) {
 			id: "99",
 			expectedResponse: `{"status": false,"error": "test error"}`,
 			expectedStatus: http.StatusInternalServerError,
-			mockServiceOutput: []interface{}{"", fmt.Errorf("test error")},
+			mockServiceOutput: []interface{}{fmt.Errorf("test error")},
 		},
 	}
 

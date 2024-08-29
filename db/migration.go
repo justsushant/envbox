@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS mst_images (
 
 CREATE TABLE IF NOT EXISTS containers_running (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	imageName TEXT,
+	imageID INTEGER,
 	containerID TEXT,
 	accessLink TEXT,
 	active BOOLEAN NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
 	createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO mst_images (name, path) VALUES ('Jupyter Notebook', 'jupyternotebookfrompy310');
+INSERT INTO mst_images (name, path) VALUES ('Jupyter Notebook', 'envbox/jupyter');
 `
 
 

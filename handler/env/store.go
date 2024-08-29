@@ -16,8 +16,8 @@ func NewStore(db *sql.DB) types.EnvStore {
 	}
 }
 
-func (s *Store) SaveContainer(containerID, imageName string) error {
-	_, err := s.db.Exec("INSERT INTO containers_running (containerID, imageName) VALUES (?, ?)", containerID, imageName)
+func (s *Store) SaveContainer(containerID string, imageID int) error {
+	_, err := s.db.Exec("INSERT INTO containers_running (containerID, imageID) VALUES (?, ?)", containerID, imageID)
 	if err != nil {
 		return err
 	}

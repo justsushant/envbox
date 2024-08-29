@@ -33,76 +33,6 @@ func (s *Service) GetAllEnvs() ([]types.Env, error) {
 	return s.envStore.GetAllEnvs()
 }
 
-func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.HijackedResponse, error) {
-	// getting container data from store
-	env, err := s.envStore.GetContainerByID(id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return dockerTypes.HijackedResponse{}, fmt.Errorf("no container found: %v", err)
-		}
-		return dockerTypes.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
-	}
-	if !env.Active {
-		return dockerTypes.HijackedResponse{}, fmt.Errorf("container is already stopped")
-	}
-
-	// creating exec for the container
-	execID, err := client.ContainerExecCreate(context.Background(), env.ContainerID, container.ExecOptions{
-        AttachStdin:  true,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty:          true,
-        Cmd:          []string{"sh"},
-    })
-    if err != nil {
-        fmt.Println(err)
-        return dockerTypes.HijackedResponse{}, err
-    }
-
-	// extracting response object from exec
-	hijackedResp, err := client.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
-    if err != nil {
-        fmt.Println(err)
-        return dockerTypes.HijackedResponse{}, err
-    }
-
-	return hijackedResp, nil
-}
-
-func (s *Service) KillEnv(client *client.Client, id string) (string, error) {
-	ctx := context.Background()
-
-	// get the container details from db
-	env, err := s.envStore.GetContainerByID(id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", fmt.Errorf("no container found: %v", err)
-		}
-		return "", fmt.Errorf("failed to get the container details: %v", err)
-	}
-	if !env.Active {
-		return "", fmt.Errorf("container is already stopped")
-	}
-
-	// currently, stops the container immediately
-	// could use ContainerStop to gracefully stop the container 
-	if err := client.ContainerKill(ctx, env.ContainerID, "SIGKILL"); err != nil {
-		return "", fmt.Errorf("failed to kill the container: %v", err)
-	}
-
-	// removes the container from host
-	if err := client.ContainerRemove(ctx, env.ContainerID, container.RemoveOptions{Force:true}); err != nil {
-		return "", fmt.Errorf("failed to remove the container: %v", err)
-	}
-
-	// sets the active to false in the db
-	if err := s.envStore.DeleteContainer(id); err != nil {
-		return "", fmt.Errorf("failed to inactive the container in database: %v", err)
-	}
-
-	return "container stopped and removed successfully", nil
-}
-
 func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (string, error) {
 	ctx := context.Background()
 
@@ -139,17 +69,17 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 		PortBindings: portBinding,
 	}, nil, nil, "")
 	if err != nil {
-		fmt.Println(err)
+		return "", fmt.Errorf("error while creating the container: %v", err)
 	}
 
 	// starts the container
 	if err := client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		fmt.Println(err)
+		return "", fmt.Errorf("error while starting the container: %v", err)
 	}
 	
 	// save the container details in the db
-	if err := s.envStore.SaveContainer(resp.ID, image.Name); err != nil {
-		fmt.Println("error while saving container details in the database: ", err)
+	if err := s.envStore.SaveContainer(resp.ID, image.ID); err != nil {
+		return "", fmt.Errorf("error while saving container details in the database: %v", err)
 	}
 
 
@@ -164,10 +94,12 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 				return "", err
 			}
 		case log := <-logsChan:
+			// if notebook url is found, means the notebook has started
 			if strings.Contains(log, containerAddr) {
-				accessLink := fmt.Sprintf("http://127.0.0.1:%s/tree?token=%s",hostPort,notebookPwd)
+				accessLink := fmt.Sprintf("http://127.0.0.1:%s/tree?token=%s", hostPort, notebookPwd)
+
 				if err := s.envStore.UpdateContainerAccessLink(resp.ID, accessLink); err != nil {
-					fmt.Println("error while updating the access link: ", err)
+					return "", fmt.Errorf("error while updating the access link in the database: %v", err)
 				}
 
 				return accessLink, nil
@@ -176,6 +108,75 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 	}
 }
 
+func (s *Service) KillEnv(client *client.Client, id string) error {
+	ctx := context.Background()
+
+	// get the container details from db
+	env, err := s.envStore.GetContainerByID(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("no container found: %v", err)
+		}
+		return fmt.Errorf("failed to get the container details: %v", err)
+	}
+	if !env.Active {
+		return fmt.Errorf("container is already stopped")
+	}
+
+	// currently, stops the container immediately
+	// could use ContainerStop to gracefully stop the container 
+	if err := client.ContainerKill(ctx, env.ContainerID, "SIGKILL"); err != nil {
+		return fmt.Errorf("failed to kill the container: %v", err)
+	}
+
+	// removes the container from host
+	if err := client.ContainerRemove(ctx, env.ContainerID, container.RemoveOptions{Force:true}); err != nil {
+		return fmt.Errorf("failed to remove the container: %v", err)
+	}
+
+	// sets the active to false in the db
+	if err := s.envStore.DeleteContainer(id); err != nil {
+		return fmt.Errorf("failed to inactive the container in database: %v", err)
+	}
+
+	return nil
+}
+
+func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.HijackedResponse, error) {
+	// getting container data from store
+	env, err := s.envStore.GetContainerByID(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return dockerTypes.HijackedResponse{}, fmt.Errorf("no container found: %v", err)
+		}
+		return dockerTypes.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
+	}
+	if !env.Active {
+		return dockerTypes.HijackedResponse{}, fmt.Errorf("container is already stopped")
+	}
+
+	// creating exec for the container
+	execID, err := client.ContainerExecCreate(context.Background(), env.ContainerID, container.ExecOptions{
+        AttachStdin:  true,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty:          true,
+        Cmd:          []string{"sh"},
+    })
+    if err != nil {
+        fmt.Println(err)
+        return dockerTypes.HijackedResponse{}, err
+    }
+
+	// extracting response object from exec
+	hijackedResp, err := client.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
+    if err != nil {
+        fmt.Println(err)
+        return dockerTypes.HijackedResponse{}, err
+    }
+
+	return hijackedResp, nil
+}
 
 func createPortBinding(proto string, hostPort string, containerPort string) (nat.PortMap, error) {
 	port, err := nat.NewPort(proto, containerPort)
@@ -185,7 +186,6 @@ func createPortBinding(proto string, hostPort string, containerPort string) (nat
 
 	return nat.PortMap{port: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: hostPort}}}, nil
 }
-
 
 func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-chan error) {
 	options := container.LogsOptions{
@@ -204,8 +204,7 @@ func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-
 		errChan <- err
 		defer responseBody.Close()
 
-		// reads the logs to find the notebook url
-		// if notebook url is found, means the notebook has started
+		// reads the logs and push to logs channel
 		buf := make([]byte, 1024)
 		for {
 			n, err := responseBody.Read(buf)
