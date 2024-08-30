@@ -12,3 +12,6 @@ run: build
 
 runlinux: buildlinux
 	@./bin/envbox
+
+migratelinux: buildlinux
+	@MIGRATE="true" ./bin/envbox

@@ -3,6 +3,8 @@
 
 ## Fix the migration
     Set up a proper migration method
+    maybe migrate-down is needed too
+    maybe it is simpler to upload image on docker hub and then pull it from there
 
 ## Tests
     Write tests for handlers

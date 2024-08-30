@@ -28,6 +28,11 @@ func NewServer(addr string, db *sql.DB, client *client.Client) *Server {
 
 func (s *Server) Run() error {
 	router := gin.Default()
+	// router.LoadHTMLGlob("templates/*")
+
+	// router.GET("/", func(c *gin.Context) {
+	// 	c.HTML(http.StatusOK, "home.html", gin.H{})
+	// })
 
 	apiRouter := router.Group("/api/v1")
 	apiRouter.GET("/ping", func(c *gin.Context) {
