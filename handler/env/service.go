@@ -9,31 +9,30 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/docker/api/types"
 
-	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/justsushant/envbox/types"
+	localTypes "github.com/justsushant/envbox/types"
 	"github.com/justsushant/envbox/utils"
 )
 
-var containerAddr = fmt.Sprintf("http://127.0.0.1:%s/tree?token=", utils.DEFAULT_CONTAINER_PORT)
 
 type Service struct {
-	envStore types.EnvStore
-	imgStore types.ImageStore
+	envStore localTypes.EnvStore
+	imgStore localTypes.ImageStore
 }
 
-func NewService(envStore types.EnvStore, imgStore types.ImageStore) *Service {
+func NewService(envStore localTypes.EnvStore, imgStore localTypes.ImageStore) *Service {
 	return &Service{
 		envStore: envStore,
 		imgStore: imgStore,
 	}
 }
 
-func (s *Service) GetAllEnvs() ([]types.Env, error) {
+func (s *Service) GetAllEnvs() ([]localTypes.Env, error) {
 	return s.envStore.GetAllEnvs()
 }
 
-func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (string, error) {
+func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload) (string, error) {
 	ctx := context.Background()
 
 	// get image details from db
@@ -55,13 +54,27 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 		return "", err
 	}
 
-	// random password of 8 characters for notebook
-	notebookPwd := utils.GenerateRandomPassword(8) 
+	cmd := []string{}
+	internalLink := ""
+	accessLink := ""
+
+	// set the startup command and link according to the image
+	switch image.Name {
+		case "Jupyter Notebook":
+			cmd = generateJupyterNoteBookStartCommand()
+			internalLink = generateJupyterNotebookInternalLink(utils.DEFAULT_CONTAINER_PORT)
+			accessLink = generateJupyterNotebookAccessLink(hostPort)
+		case "VS Code (Go)":
+			cmd = generateVScodeGoStartCommand()
+			internalLink = generateVsCodeGoInternalLink(utils.DEFAULT_CONTAINER_PORT)
+			accessLink  = generateVsCodeGoAccessLink(hostPort)
+	}
 
 	// creates the container
 	resp, err := client.ContainerCreate(ctx, &container.Config{
 		Image: image.Path,
-		Cmd:   generateJupyterNoteBookStartCommand(notebookPwd, utils.DEFAULT_CONTAINER_PORT),
+		Cmd:   cmd,
+		// Cmd:   generateJupyterNoteBookStartCommand(),
 		ExposedPorts: nat.PortSet{
 			utils.DEFAULT_CONTAINER_PORT + "/tcp": {},
 		},
@@ -95,8 +108,8 @@ func (s *Service) CreateEnv(client *client.Client, p types.CreateEnvPayload) (st
 			}
 		case log := <-logsChan:
 			// if notebook url is found, means the notebook has started
-			if strings.Contains(log, containerAddr) {
-				accessLink := fmt.Sprintf("http://127.0.0.1:%s/tree?token=%s", hostPort, notebookPwd)
+			if strings.Contains(log, internalLink) {
+				// accessLink := fmt.Sprintf("http://127.0.0.1:%s/tree", hostPort)
 
 				if err := s.envStore.UpdateContainerAccessLink(resp.ID, accessLink); err != nil {
 					return "", fmt.Errorf("error while updating the access link in the database: %v", err)
@@ -142,17 +155,17 @@ func (s *Service) KillEnv(client *client.Client, id string) error {
 	return nil
 }
 
-func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.HijackedResponse, error) {
+func (s *Service) GetTerminal(client *client.Client, id string) (types.HijackedResponse, error) {
 	// getting container data from store
 	env, err := s.envStore.GetContainerByID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return dockerTypes.HijackedResponse{}, fmt.Errorf("no container found: %v", err)
+			return types.HijackedResponse{}, fmt.Errorf("no container found: %v", err)
 		}
-		return dockerTypes.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
+		return types.HijackedResponse{}, fmt.Errorf("failed to get the container details: %v", err)
 	}
 	if !env.Active {
-		return dockerTypes.HijackedResponse{}, fmt.Errorf("container is already stopped")
+		return types.HijackedResponse{}, fmt.Errorf("container is already stopped")
 	}
 
 	// creating exec for the container
@@ -165,14 +178,14 @@ func (s *Service) GetTerminal(client *client.Client, id string) (dockerTypes.Hij
     })
     if err != nil {
         fmt.Println(err)
-        return dockerTypes.HijackedResponse{}, err
+        return types.HijackedResponse{}, err
     }
 
 	// extracting response object from exec
 	hijackedResp, err := client.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
     if err != nil {
         fmt.Println(err)
-        return dockerTypes.HijackedResponse{}, err
+        return types.HijackedResponse{}, err
     }
 
 	return hijackedResp, nil
@@ -200,6 +213,10 @@ func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-
 
 	// goroutine to get the logs from the container
 	go func() {
+		// closing the channels
+		defer close(errChan)
+		defer close(logsChan)
+
 		responseBody, err := cli.ContainerLogs(context.Background(), containerID, options)
 		errChan <- err
 		defer responseBody.Close()
@@ -219,7 +236,28 @@ func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-
 }
 
 // generates the notebook start command for container creation
-func generateJupyterNoteBookStartCommand(token, port string) []string {
-	cmd := fmt.Sprintf("jupyter notebook --allow-root --ip 0.0.0.0 --NotebookApp.allow_origin=* --NotebookApp.token=%s --no-browser --port=%s", token, port)
+func generateJupyterNoteBookStartCommand() []string {
+	cmd := "jupyter notebook --allow-root --ip 0.0.0.0 --NotebookApp.allow_origin=* --NotebookApp.token='' --no-browser --port=8080"
 	return strings.Split(cmd, " ")
+}
+
+func generateVScodeGoStartCommand() []string {
+	cmd := "code-server --auth none /envbox"
+	return strings.Split(cmd, " ")
+}
+
+func generateJupyterNotebookInternalLink(port string) string {
+	return fmt.Sprintf("http://127.0.0.1:%s/tree", port)
+}
+
+func generateVsCodeGoInternalLink(port string) string {
+	return fmt.Sprintf("http://0.0.0.0:%s/", port)
+}
+
+func generateJupyterNotebookAccessLink(port string) string {
+	return fmt.Sprintf("http://127.0.0.1:%s/tree", port)
+}
+
+func generateVsCodeGoAccessLink(port string) string {
+	return fmt.Sprintf("http://127.0.0.1:%s/", port)
 }

@@ -35,7 +35,7 @@ func MigrateDockerImgUp(cli *client.Client, db *sql.DB, migTable []localTypes.Im
 			if err != nil {
 				log.Fatalf("error while inserting image record in db: %v", err)
 			}
-			return nil
+			continue
 		}
 
 		// if not found, load image

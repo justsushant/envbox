@@ -1,0 +1,17 @@
+FROM codercom/code-server:latest
+
+USER root
+
+# creating directory for workspace
+RUN mkdir /envbox && \
+    chown coder:coder /envbox
+
+# installing go
+RUN apt-get update && \
+    apt-get install -y golang
+
+# installing go extension
+RUN /usr/bin/code-server --install-extension golang.Go
+
+# switching back to user
+USER coder

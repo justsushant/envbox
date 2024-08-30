@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const DEFAULT_CONTAINER_PORT = "8888"
+const DEFAULT_CONTAINER_PORT = "8080"
 
 func GenerateRandomPassword(length int) string {
     const charset = "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789"

@@ -10,6 +10,11 @@ var IMAGE_MIG_TABLE = []types.ImageMigration{
 		Name: "envbox/jupyter:0.1",
 		Path: "./migration/DockerFiles/Dockerfile_jupyter_0.1",
 	},
+	{ 
+		Label: "VS Code (Go)",
+		Name: "envbox/vscode_go:0.1",
+		Path: "./migration/DockerFiles/Dockerfile_vscode_go_0.1",
+	},
 }
 
 var CREATE_TABLES_STMT = `

@@ -2,6 +2,7 @@ package migration
 
 import (
 	"database/sql"
+	"log"
 )
 
 func MigrateSqliteDBUp(db *sql.DB, query string) error {
@@ -9,6 +10,8 @@ func MigrateSqliteDBUp(db *sql.DB, query string) error {
 	if err != nil {
 		return err
 	}
+
+	log.Println("sqlite db migrated successfully")
 	return nil
 }
 
