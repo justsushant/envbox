@@ -28,7 +28,7 @@ func NewService(envStore localTypes.EnvStore, imgStore localTypes.ImageStore) *S
 	}
 }
 
-func (s *Service) GetAllEnvs() ([]localTypes.Env, error) {
+func (s *Service) GetAllEnvs() ([]localTypes.GetImageResponse, error) {
 	return s.envStore.GetAllEnvs()
 }
 

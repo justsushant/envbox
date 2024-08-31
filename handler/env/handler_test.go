@@ -30,9 +30,9 @@ func(m *MockEnvService) KillEnv(client *client.Client, id string) error {
 	return args.Error(0)
 }
 
-func(m *MockEnvService) GetAllEnvs() ([]types.Env, error) {
+func(m *MockEnvService) GetAllEnvs() ([]types.GetImageResponse, error) {
 	args := m.Called()
-	return args.Get(0).([]types.Env), args.Error(1)
+	return args.Get(0).([]types.GetImageResponse), args.Error(1)
 }
 func(m *MockEnvService) GetTerminal(*client.Client, string) (dockerTypes.HijackedResponse, error) {
 	args := m.Called()
@@ -119,9 +119,9 @@ func TestGetAllEnvsHandler(t *testing.T) {
 	}{
 		{
 			name: "happy path get all envs",
-			mockServiceOutput: []interface{}{[]types.Env{
-				{ID: "1", ImageName: "testImage1", ContainerID: "testContainerID1", AccessLink: "testAccessLink1", Active: true, CreatedAt: "testCreatedAt1"},
-				{ID: "2", ImageName: "testImage2", ContainerID: "testContainerID2", AccessLink: "testAccessLink2", Active: true, CreatedAt: "testCreatedAt2"},
+			mockServiceOutput: []interface{}{[]types.GetImageResponse{
+				{ID: "1", ImageName: "testImage1", AccessLink: "testAccessLink1", CreatedAt: "testCreatedAt1"},
+				{ID: "2", ImageName: "testImage2", AccessLink: "testAccessLink2", CreatedAt: "testCreatedAt2"},
 			}, nil},
 			expectedStatus: http.StatusOK,
 			expectedResponse: `{
@@ -130,17 +130,13 @@ func TestGetAllEnvsHandler(t *testing.T) {
 					{
 						"id": "1",
 						"imageName": "testImage1",
-						"containerID": "testContainerID1",
 						"accessLink": "testAccessLink1",
-						"active": true,
 						"createdAt": "testCreatedAt1"
 					},
 					{
 						"id": "2",
 						"imageName": "testImage2",
-						"containerID": "testContainerID2",
 						"accessLink": "testAccessLink2",
-						"active": true,
 						"createdAt": "testCreatedAt2"
 					}
 				]
@@ -153,7 +149,7 @@ func TestGetAllEnvsHandler(t *testing.T) {
 				"error": "test error"
 			}`,
 			expectedStatus: http.StatusInternalServerError,
-			mockServiceOutput: []interface{}{[]types.Env{}, fmt.Errorf("test error")},
+			mockServiceOutput: []interface{}{[]types.GetImageResponse{}, fmt.Errorf("test error")},
 		},
 		{
 			name: "zero unhappy path get all envs ",
@@ -162,7 +158,7 @@ func TestGetAllEnvsHandler(t *testing.T) {
 				"error": "no envs found"
 			}`,
 			expectedStatus: http.StatusOK,
-			mockServiceOutput: []interface{}{[]types.Env{}, nil},
+			mockServiceOutput: []interface{}{[]types.GetImageResponse{}, nil},
 		},
 	}
 

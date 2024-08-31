@@ -32,20 +32,24 @@ func (s *Store) DeleteContainer(id string) error {
 	return nil
 }
 
-func (s *Store) GetAllEnvs() ([]types.Env, error) {
-	rows, err := s.db.Query("SELECT * FROM containers_running WHERE active = 1")
+func (s *Store) GetAllEnvs() ([]types.GetImageResponse, error) {
+	rows, err := s.db.Query(`
+		SELECT cr.id, mi.name, cr.accessLink, cr.createdAt FROM containers_running cr
+		INNER JOIN mst_images mi ON cr.imageID = mi.id
+		WHERE active = 1
+	`)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return []types.Env{}, sql.ErrNoRows
+			return []types.GetImageResponse{}, sql.ErrNoRows
 		}
 		return nil, err
 	}
 	defer rows.Close()
 
-	var envs []types.Env
+	var envs []types.GetImageResponse
 	for rows.Next() {
-		var env types.Env
-		err := rows.Scan(&env.ID, &env.ImageName, &env.ContainerID, &env.AccessLink, &env.Active, &env.CreatedAt)
+		var env types.GetImageResponse
+		err := rows.Scan(&env.ID, &env.ImageName, &env.AccessLink, &env.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

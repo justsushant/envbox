@@ -111,21 +111,19 @@ func TestGetAllEnvs(t *testing.T) {
 	tt := []struct{
 		name string
 		mockServiceOutput *sqlmock.Rows
-		expEnv []types.Env
+		expEnv []types.GetImageResponse
 		expErr error
 	}{
 		{
 			name: "get all envs happy path",
 			mockServiceOutput: sqlmock.NewRows([]string{
-				"id", "imageName", "containerID", "accessLink", "active", "createdAt",
-			}).AddRow("testID", "testImageName", "testContainerID", "testAccessLink", 1, "2024-08-27 00:00:00"),
-			expEnv: []types.Env{
+				"id", "imageName", "accessLink", "createdAt",
+			}).AddRow("testID", "testImageName", "testAccessLink", "2024-08-27 00:00:00"),
+			expEnv: []types.GetImageResponse{
 				{
 					ID: "testID",
 					ImageName: "testImageName",
-					ContainerID: "testContainerID",
 					AccessLink: "testAccessLink",
-					Active: true,
 					CreatedAt: "2024-08-27 00:00:00",
 				},
 			},
@@ -134,9 +132,9 @@ func TestGetAllEnvs(t *testing.T) {
 		{
 			name: "get all envs unhappy path of zero envs",
 			mockServiceOutput: sqlmock.NewRows([]string{
-				"id", "imageName", "containerID", "accessLink", "active", "createdAt",
+				"id", "imageName", "accessLink", "createdAt",
 			}),
-			expEnv: []types.Env{},
+			expEnv: []types.GetImageResponse{},
 			expErr: sql.ErrNoRows,
 		},
 		{
@@ -159,7 +157,11 @@ func TestGetAllEnvs(t *testing.T) {
 			stubStore := NewStore(db)
 
 			// setting the expected value in the mock
-			expQuery := mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM containers_running WHERE active = 1"))
+			expQuery := mock.ExpectQuery(regexp.QuoteMeta(`
+				SELECT cr.id, mi.name, cr.accessLink, cr.createdAt FROM containers_running cr
+				INNER JOIN mst_images mi ON cr.imageID = mi.id
+				WHERE active = 1
+			`))
 			if tc.expErr != nil {
 				expQuery.
 				WithArgs().
