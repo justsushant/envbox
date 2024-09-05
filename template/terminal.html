@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Terminal</title>
+    <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
+    <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+    <script src="https://unpkg.com/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #terminal {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+
+    <script>
+        const PUBLIC_HOST = "{{ .publicHost }}";
+        const ID = "{{ .id }}";
+        var socket = new WebSocket("ws://" + PUBLIC_HOST + "/api/v1/env/getTerminal/" + ID);
+        var term = new Terminal({
+            cursorBlink: true,
+        });
+        var fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+
+        term.open(document.getElementById('terminal'));
+        fitAddon.fit();
+
+        socket.onmessage = function(event) {
+            term.write(event.data);
+        };
+
+        term.onData(function(data) {
+            socket.send(data);
+        });
+
+        window.addEventListener('resize', function() {
+            fitAddon.fit(); 
+        });
+    </script>
+</body>
+</html>

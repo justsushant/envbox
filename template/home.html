@@ -203,7 +203,7 @@
                                 <td>${item.imageName}</td>
                                 <td>${createdAt}</td>
                                 <td><a target="_blank" href="${item.accessLink}"><i class="fas fa-external-link-alt"></i></a></td>
-                                <td><a target="_blank" href=""><i class="fas fa-external-link-alt"></i></a></td>
+                                <td><a target="_blank" href="/terminal?id=${item.id}"><i class="fas fa-external-link-alt"></i></a></td>
                                 <td><button id="con${item.id}" onclick="killContainer(this)" type="button" class="btn btn-danger">Delete</button></td>
                             </tr>`;
                         tableBody.insertAdjacentHTML('beforeend', row);

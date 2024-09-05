@@ -3,6 +3,7 @@ package env
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/docker/docker/client"
@@ -85,8 +86,7 @@ func (h *Handler) getTerminal(c *gin.Context) {
 	id := c.Param("id")
 	termResp, err := h.service.GetTerminal(h.client, id)
 	if err != nil {
-		fmt.Println("Error while getting terminal: ", err)
-		// c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	defer termResp.Close()
@@ -94,7 +94,7 @@ func (h *Handler) getTerminal(c *gin.Context) {
 	// upgrade the connection to ws
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
     if err != nil {
-		fmt.Println("Error while upgrading the connection: ", err)
+		log.Println("Error while upgrading the connection: ", err)
         return
     }
     defer conn.Close()
@@ -104,10 +104,9 @@ func (h *Handler) getTerminal(c *gin.Context) {
         for {
             _, message, err := conn.ReadMessage()
             if err != nil {
-                fmt.Println("read error:", err)
+                log.Println("read error:", err)
                 return
             }
-			// fmt.Println("ws: ", string(message))
 			fmt.Fprint(termResp.Conn, string(message))
         }
     }()
@@ -117,14 +116,14 @@ func (h *Handler) getTerminal(c *gin.Context) {
 		buf := make([]byte, 1024)
 		n, err := termResp.Reader.Read(buf)
 		if err != nil {
-			fmt.Println("read error:", err)
+			log.Println("read error:", err)
 			return
 		}
 
-		// fmt.Println("docker: ", string(buf[:n]))
+		// log.Println("docker: ", string(buf[:n]))
 		err = conn.WriteMessage(websocket.TextMessage, buf[:n])
 		if err != nil {
-			fmt.Println("write error:", err)
+			log.Println("write error:", err)
 			return
 		}
 	}

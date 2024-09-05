@@ -174,7 +174,7 @@ func (s *Service) GetTerminal(client *client.Client, id string) (types.HijackedR
         AttachStdout: true,
         AttachStderr: true,
         Tty:          true,
-        Cmd:          []string{"sh"},
+        Cmd:          []string{"/bin/bash"},
     })
     if err != nil {
         fmt.Println(err)

@@ -36,6 +36,23 @@ func (s *Server) Run() error {
 		})
 	})
 
+	router.GET("/terminal", func(c *gin.Context) {
+		id := c.Query("id")
+		if id == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "id is required",
+			})
+			return
+		}
+
+		c.HTML(http.StatusOK, "terminal.html", gin.H{
+			"publicHost": "localhost:8080",
+			"id": id,
+		})
+	})
+
+	
+
 	apiRouter := router.Group("/api/v1")
 	apiRouter.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{

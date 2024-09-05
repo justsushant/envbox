@@ -1,5 +1,6 @@
 ## Public Host
     Unable to supply host while running the server
+    Remove the harcoded values
 
 ## Fix the migration
     Set up a proper migration method
@@ -16,7 +17,8 @@
     better security for the containers of users
     implement mount point feature
 
-
-// install some beautiful terminal in jupyter notebook image
-// auto complete, colorgul highlghts and history (up arrow key) works from terminal itself
+## Coloful beautiful terminal in getTerminal
+    auto complete
+    colorful highlights
+    history (up & down arrow key)
 
