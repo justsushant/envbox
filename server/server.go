@@ -28,6 +28,19 @@ func NewServer(addr string, db *sql.DB, client *client.Client) *Server {
 
 func (s *Server) Run() error {
 	router := gin.Default()
+	// router.Use(cors.New(cors.Config{
+	// 	AllowAllOrigins: true,
+	// 	AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+	// 	AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+	// 	ExposeHeaders: []string{"Content-Length"},
+	// 	AllowCredentials: true,
+	// 	// AllowOriginFunc: func(origin string) bool {
+	// 	// 	return true
+	// 	// },
+	// 	MaxAge: 12 * time.Hour, // How long to cache the preflight response
+	// }))
+
+
 	router.LoadHTMLGlob("template/*")
 
 	router.GET("/", func(c *gin.Context) {
@@ -66,8 +79,8 @@ func (s *Server) Run() error {
 	imageHandler.RegisterRoutes(apiRouter.Group("/image"))
 
 	envStore := env.NewStore(s.db)
-	envService := env.NewService(envStore, imageStore)
-	envHandler := env.NewHandler(envService, s.client)
+	envService := env.NewService(s.client, envStore, imageStore)
+	envHandler := env.NewHandler(envService)
 	envHandler.RegisterRoutes(apiRouter.Group("/env"))
 
 

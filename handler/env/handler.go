@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/justsushant/envbox/types"
@@ -23,13 +22,11 @@ var upgrader = websocket.Upgrader{
 
 type Handler struct {
 	service types.EnvService
-	client  *client.Client
 }
 
-func NewHandler(service types.EnvService, client *client.Client) *Handler {
+func NewHandler(service types.EnvService) *Handler {
 	return &Handler{
 		service: service,
-		client:  client,
 	}
 }
 
@@ -49,7 +46,7 @@ func (h *Handler) createEnv(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.service.CreateEnv(h.client, payload)
+	resp, err := h.service.CreateEnv(payload)
 	if err != nil {
 		c.JSON(500, gin.H{"status": false, "error": err.Error()})
 		return
@@ -59,7 +56,7 @@ func (h *Handler) createEnv(c *gin.Context) {
 
 func (h *Handler) killEnv(c *gin.Context) {
 	id := c.Param("id")
-	err := h.service.KillEnv(h.client, id)
+	err := h.service.KillEnv(id)
 	if err != nil {
 		c.JSON(500, gin.H{"status": false, "error": err.Error()})
 		return
@@ -84,7 +81,7 @@ func (h *Handler) getAllEnvs(c *gin.Context) {
 func (h *Handler) getTerminal(c *gin.Context) {
 	// get the terminal hijaked response
 	id := c.Param("id")
-	termResp, err := h.service.GetTerminal(h.client, id)
+	termResp, err := h.service.GetTerminal(id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

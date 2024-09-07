@@ -1,15 +1,14 @@
 package types
 
 import (
-	"github.com/docker/docker/client"
 	dockerTypes "github.com/docker/docker/api/types"
 )
 
 type EnvService interface {
-	CreateEnv(*client.Client, CreateEnvPayload) (string, error)
-	KillEnv(*client.Client, string) error
+	CreateEnv(CreateEnvPayload) (string, error)
+	KillEnv(string) error
 	GetAllEnvs() ([]GetImageResponse, error)
-	GetTerminal(*client.Client, string) (dockerTypes.HijackedResponse, error)
+	GetTerminal(string) (dockerTypes.HijackedResponse, error)
 }
 
 type EnvStore interface {

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"github.com/justsushant/envbox/types"
 	"github.com/stretchr/testify/assert"
@@ -20,13 +19,13 @@ type MockEnvService struct {
 	mock.Mock
 }
 
-func(m *MockEnvService) CreateEnv(client *client.Client, payload types.CreateEnvPayload) (string, error) {
-	args := m.Called(client, payload)
+func(m *MockEnvService) CreateEnv(payload types.CreateEnvPayload) (string, error) {
+	args := m.Called(payload)
 	return args.String(0), args.Error(1)
 }
 
-func(m *MockEnvService) KillEnv(client *client.Client, id string) error {
-	args := m.Called(client, id)
+func(m *MockEnvService) KillEnv(id string) error {
+	args := m.Called(id)
 	return args.Error(0)
 }
 
@@ -34,7 +33,7 @@ func(m *MockEnvService) GetAllEnvs() ([]types.GetImageResponse, error) {
 	args := m.Called()
 	return args.Get(0).([]types.GetImageResponse), args.Error(1)
 }
-func(m *MockEnvService) GetTerminal(*client.Client, string) (dockerTypes.HijackedResponse, error) {
+func(m *MockEnvService) GetTerminal(string) (dockerTypes.HijackedResponse, error) {
 	args := m.Called()
 	return args.Get(0).(dockerTypes.HijackedResponse), args.Error(1)
 }
@@ -84,9 +83,8 @@ func TestCreateEnvHandler(t *testing.T) {
 
 			// setting mocks
 			mockService := new(MockEnvService)
-			mockClient := &client.Client{}
-			mockHandler := NewHandler(mockService, mockClient)
-			mockService.On("CreateEnv", mockClient, tc.payload).Return(tc.mockServiceOutput...)
+			mockHandler := NewHandler(mockService)
+			mockService.On("CreateEnv", tc.payload).Return(tc.mockServiceOutput...)
 
 			// setting up gin router
 			gin.SetMode(gin.TestMode)
@@ -101,7 +99,7 @@ func TestCreateEnvHandler(t *testing.T) {
 			mockHandler.createEnv(c)
 			
 			// checking the output
-			mockService.AssertCalled(t, "CreateEnv", mockClient, tc.payload)
+			mockService.AssertCalled(t, "CreateEnv", tc.payload)
 			mockService.AssertExpectations(t)
 			
 			assert.Equal(t, tc.expectedStatus, w.Code)
@@ -166,8 +164,7 @@ func TestGetAllEnvsHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// setting mocks
 			mockService := new(MockEnvService)
-			mockClient := &client.Client{}
-			mockHandler := NewHandler(mockService, mockClient)
+			mockHandler := NewHandler(mockService)
 			mockService.On("GetAllEnvs").Return(tc.mockServiceOutput...)
 
 			// setting up gin router
@@ -221,9 +218,8 @@ func TestKillEnvHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// setting mocks
 			mockService := new(MockEnvService)
-			mockClient := &client.Client{}
-			mockHandler := NewHandler(mockService, mockClient)
-			mockService.On("KillEnv", mockClient, tc.id).Return(tc.mockServiceOutput...)
+			mockHandler := NewHandler(mockService)
+			mockService.On("KillEnv", tc.id).Return(tc.mockServiceOutput...)
 
 			// setting up gin router
 			gin.SetMode(gin.TestMode)
@@ -239,7 +235,7 @@ func TestKillEnvHandler(t *testing.T) {
 			mockHandler.killEnv(c)
 			
 			// checking the output
-			mockService.AssertCalled(t, "KillEnv", mockClient, tc.id)
+			mockService.AssertCalled(t, "KillEnv", tc.id)
 			mockService.AssertExpectations(t)
 			
 			assert.Equal(t, tc.expectedStatus, w.Code)

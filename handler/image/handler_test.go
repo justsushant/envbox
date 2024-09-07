@@ -38,11 +38,11 @@ func TestGetImages(t *testing.T) {
 		db, mock, handler := setTest(t)
 		defer db.Close()
 
-		expOut := `{"error":"No images found"}`
+		expOut := `{"error":"no images found","status":false}`
 
 		// filling expected values
 		rows := sqlmock.NewRows([]string{"id", "name", "path"})
-		mock.ExpectQuery("SELECT id, name, path FROM images").WillReturnRows(rows)
+		mock.ExpectQuery("SELECT id, name, path FROM mst_images").WillReturnRows(rows)
 
 		// calling the handler
 		w := httptest.NewRecorder()
@@ -60,11 +60,11 @@ func TestGetImages(t *testing.T) {
 		db, mock, handler := setTest(t)
 		defer db.Close()
 
-		expOut := `[{"id":1,"name":"test-name","path":"test-title"}]`
+		expOut := `{"data":[{"id":1,"name":"test-name","path":"test-title"}],"status":true}`
 
 		// filling expected values
 		rows := sqlmock.NewRows([]string{"id", "name", "path"}).AddRow(1, "test-name", "test-title")
-		mock.ExpectQuery("SELECT id, name, path FROM images").WillReturnRows(rows)
+		mock.ExpectQuery("SELECT id, name, path FROM mst_images").WillReturnRows(rows)
 
 		// calling the handler
 		w := httptest.NewRecorder()

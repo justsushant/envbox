@@ -17,12 +17,14 @@ import (
 
 
 type Service struct {
+	dockerClient *client.Client
 	envStore localTypes.EnvStore
 	imgStore localTypes.ImageStore
 }
 
-func NewService(envStore localTypes.EnvStore, imgStore localTypes.ImageStore) *Service {
+func NewService(dockerClient *client.Client, envStore localTypes.EnvStore, imgStore localTypes.ImageStore) *Service {
 	return &Service{
+		dockerClient: dockerClient,
 		envStore: envStore,
 		imgStore: imgStore,
 	}
@@ -32,7 +34,7 @@ func (s *Service) GetAllEnvs() ([]localTypes.GetImageResponse, error) {
 	return s.envStore.GetAllEnvs()
 }
 
-func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload) (string, error) {
+func (s *Service) CreateEnv(p localTypes.CreateEnvPayload) (string, error) {
 	ctx := context.Background()
 
 	// get image details from db
@@ -71,7 +73,7 @@ func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload
 	}
 
 	// creates the container
-	resp, err := client.ContainerCreate(ctx, &container.Config{
+	resp, err := s.dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: image.Path,
 		Cmd:   cmd,
 		// Cmd:   generateJupyterNoteBookStartCommand(),
@@ -84,9 +86,10 @@ func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload
 	if err != nil {
 		return "", fmt.Errorf("error while creating the container: %v", err)
 	}
+	
 
 	// starts the container
-	if err := client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+	if err := s.dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return "", fmt.Errorf("error while starting the container: %v", err)
 	}
 	
@@ -97,13 +100,12 @@ func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload
 
 
 	// gets the logs from the container
-	// we parse it to know when the notebook service has started
-	logsChan, errChan := getContainerLogs(client, resp.ID)
+	// we parse it to know when the app has started inside container
+	logsChan, errChan := getContainerLogs(s.dockerClient, resp.ID)
 	for {
 		select {
 		case err := <-errChan:
 			if err != nil {
-				fmt.Println(err)
 				return "", err
 			}
 		case log := <-logsChan:
@@ -121,7 +123,7 @@ func (s *Service) CreateEnv(client *client.Client, p localTypes.CreateEnvPayload
 	}
 }
 
-func (s *Service) KillEnv(client *client.Client, id string) error {
+func (s *Service) KillEnv(id string) error {
 	ctx := context.Background()
 
 	// get the container details from db
@@ -138,12 +140,12 @@ func (s *Service) KillEnv(client *client.Client, id string) error {
 
 	// currently, stops the container immediately
 	// could use ContainerStop to gracefully stop the container 
-	if err := client.ContainerKill(ctx, env.ContainerID, "SIGKILL"); err != nil {
+	if err := s.dockerClient.ContainerKill(ctx, env.ContainerID, "SIGKILL"); err != nil {
 		return fmt.Errorf("failed to kill the container: %v", err)
 	}
 
 	// removes the container from host
-	if err := client.ContainerRemove(ctx, env.ContainerID, container.RemoveOptions{Force:true}); err != nil {
+	if err := s.dockerClient.ContainerRemove(ctx, env.ContainerID, container.RemoveOptions{Force:true}); err != nil {
 		return fmt.Errorf("failed to remove the container: %v", err)
 	}
 
@@ -155,7 +157,7 @@ func (s *Service) KillEnv(client *client.Client, id string) error {
 	return nil
 }
 
-func (s *Service) GetTerminal(client *client.Client, id string) (types.HijackedResponse, error) {
+func (s *Service) GetTerminal(id string) (types.HijackedResponse, error) {
 	// getting container data from store
 	env, err := s.envStore.GetContainerByID(id)
 	if err != nil {
@@ -169,7 +171,7 @@ func (s *Service) GetTerminal(client *client.Client, id string) (types.HijackedR
 	}
 
 	// creating exec for the container
-	execID, err := client.ContainerExecCreate(context.Background(), env.ContainerID, container.ExecOptions{
+	execID, err := s.dockerClient.ContainerExecCreate(context.Background(), env.ContainerID, container.ExecOptions{
         AttachStdin:  true,
         AttachStdout: true,
         AttachStderr: true,
@@ -177,14 +179,12 @@ func (s *Service) GetTerminal(client *client.Client, id string) (types.HijackedR
         Cmd:          []string{"/bin/bash"},
     })
     if err != nil {
-        fmt.Println(err)
         return types.HijackedResponse{}, err
     }
 
 	// extracting response object from exec
-	hijackedResp, err := client.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
+	hijackedResp, err := s.dockerClient.ContainerExecAttach(context.Background(), execID.ID, container.ExecStartOptions{Tty: true})
     if err != nil {
-        fmt.Println(err)
         return types.HijackedResponse{}, err
     }
 
@@ -200,7 +200,7 @@ func createPortBinding(proto string, hostPort string, containerPort string) (nat
 	return nat.PortMap{port: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: hostPort}}}, nil
 }
 
-func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-chan error) {
+func getContainerLogs(client *client.Client, containerID string) (<-chan string, <-chan error) {
 	options := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -217,7 +217,7 @@ func getContainerLogs(cli *client.Client, containerID string) (<-chan string, <-
 		defer close(errChan)
 		defer close(logsChan)
 
-		responseBody, err := cli.ContainerLogs(context.Background(), containerID, options)
+		responseBody, err := client.ContainerLogs(context.Background(), containerID, options)
 		errChan <- err
 		defer responseBody.Close()
 
