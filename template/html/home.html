@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EnvBox - Home</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        .glass-effect {
+            background-size: cover;
+            background-position: center center;
+            background-color: rgba(241, 239, 239, 0.429);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+
+        /* .upcoming-feature {
+            border-left: 4px solid #007bff;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        } */
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">EnvBox</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/environments">Environments</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <!-- Hero Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-3">Welcome to EnvBox</h1>
+                <p class="lead">Effortlessly manage development environments with EnvBox</p>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5">Key Features</h2>
+            </div>
+            <div class="col-md-3">
+                <div class="card glass-effect h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-rocket feature-icon"></i>
+                        <h5 class="card-title">Quick Launch</h5>
+                        <p class="card-text">Launch pre-configured development environments with a single click.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card glass-effect h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tasks feature-icon"></i>
+                        <h5 class="card-title">Easy Management</h5>
+                        <p class="card-text">Manage multiple environments simultaneously from a central dashboard.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card glass-effect h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-terminal feature-icon"></i>
+                        <h5 class="card-title">Web Terminal</h5>
+                        <p class="card-text">Access your environments via web interface or terminal for maximum
+                            flexibility.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card glass-effect h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-trash-alt feature-icon"></i>
+                        <h5 class="card-title">Easy Cleanup</h5>
+                        <p class="card-text">Delete environments with a single click when they're no longer needed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5">How It Works</h2>
+            </div>
+            <div class="col-md-8 offset-md-2">
+                <div class="card glass-effect">
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">Select an environment image from our pre-configured options.
+                            </li>
+                            <li class="list-group-item">Click 'Launch' to create your new environment.</li>
+                            <li class="list-group-item">Access your environment through the web interface or terminal.
+                            </li>
+                            <li class="list-group-item">Work on your projects with all the tools you need</li>
+                            <li class="list-group-item">When finished, easily delete the environment to free up
+                                resources.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Get Started Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5">Get Started</h2>
+                <p>Ready to simplify your development workflow?</p>
+                <a href="/environments" class="btn btn-primary btn-lg">Launch Your First Environment</a>
+            </div>
+        </div>
+
+        <!-- Upcoming Features Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5">Upcoming Features</h2>
+            </div>
+            <div class="col-md-8 offset-md-2">
+                <div class="card glass-effect">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">What's Next for EnvBox</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-users text-primary me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">User Management</h6>
+                                    <p class="mb-0 text-muted">Implement the user management system with features such
+                                        as
+                                        role-based access control, deployment history tracking, and container activity
+                                        monitoring.
+                                    </p>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-box text-primary me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Host Containerized Apps</h6>
+                                    <p class="mb-0 text-muted">Enable seamless deployment and management of
+                                        containerized
+                                        applications directly within EnvBox, integrating both development and deployment
+                                        workflows.
+                                    </p>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-copy text-primary me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Custom Environment Templates</h6>
+                                    <p class="mb-0 text-muted">Allow users to create and save custom environment
+                                        templates,
+                                        ensuring quick and consistent setup across multiple projects.
+                                    </p>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="fas fa-chart-line text-primary me-3"></i>
+                                <div>
+                                    <h6 class="mb-0">Resource Management</h6>
+                                    <p class="mb-0 text-muted">Provide comprehensive flexibility to management, monitor,
+                                        track, and analyze resource usage across all environments, ensuring optimal
+                                        performance and efficiency.
+                                    </p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p>&copy; 2024 EnvBox</p>
+    </footer>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

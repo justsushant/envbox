@@ -1,0 +1,7 @@
+FROM nginx
+RUN apt update -y
+RUN apt install -y nano fswatch bash
+VOLUME [ "/etc/nginx/conf.d" ]
+COPY ./reload.sh /
+RUN chmod +x /reload.sh
+CMD ["sh", "-c", "nginx -g 'daemon off;' && /reload.sh"]

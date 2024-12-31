@@ -9,7 +9,7 @@
     use a tool for db migration
 
 ## Tests
-    Write tests for handlers
+    Write tests for service
     - Get Terminal Pending
 
 ## User Management

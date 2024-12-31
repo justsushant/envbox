@@ -7,7 +7,7 @@ RUN mkdir /envbox && \
     chown coder:coder /envbox
 
 # installing go
-RUN apt-get update && \
+RUN apt-get clean && apt-get update && \
     apt-get install -y golang
 
 # installing go extension

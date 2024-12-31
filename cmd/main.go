@@ -5,9 +5,9 @@ import (
 
 	"github.com/justsushant/envbox/config"
 	"github.com/justsushant/envbox/db"
+	"github.com/justsushant/envbox/migration"
 	"github.com/justsushant/envbox/server"
 	"github.com/justsushant/envbox/utils"
-	"github.com/justsushant/envbox/migration"
 )
 
 func main() {
@@ -30,7 +30,6 @@ func main() {
 		fmt.Println("Migration completed successfully")
 		return
 	}
-
 
 	s := server.NewServer(fmt.Sprintf(":%s", config.Envs.Port), sqliteDB, dockerClient)
 	s.Run()

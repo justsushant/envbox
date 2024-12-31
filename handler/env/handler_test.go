@@ -19,32 +19,43 @@ type MockEnvService struct {
 	mock.Mock
 }
 
-func(m *MockEnvService) CreateEnv(payload types.CreateEnvPayload) (string, error) {
+func (m *MockEnvService) CreateEnv(payload types.CreateEnvPayload) (string, string, string, error) {
 	args := m.Called(payload)
-	return args.String(0), args.Error(1)
+	return args.String(0), "", "", args.Error(1)
 }
 
-func(m *MockEnvService) KillEnv(id string) error {
+func (m *MockEnvService) KillEnv(id string) (string, error) {
 	args := m.Called(id)
-	return args.Error(0)
+	return args.String(0), args.Error(0)
 }
 
-func(m *MockEnvService) GetAllEnvs() ([]types.GetImageResponse, error) {
+func (m *MockEnvService) GetAllEnvs() ([]types.GetImageResponse, error) {
 	args := m.Called()
 	return args.Get(0).([]types.GetImageResponse), args.Error(1)
 }
-func(m *MockEnvService) GetTerminal(string) (dockerTypes.HijackedResponse, error) {
+
+func (m *MockEnvService) GetTerminal(string) (dockerTypes.HijackedResponse, error) {
 	args := m.Called()
 	return args.Get(0).(dockerTypes.HijackedResponse), args.Error(1)
 }
 
+func (m *MockEnvService) AddNginxUpstream(int, string, string, string) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockEnvService) RemoveNginxUpstream(string) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestCreateEnvHandler(t *testing.T) {
 	tt := []struct {
-		name string
-		payload types.CreateEnvPayload
+		name              string
+		payload           types.CreateEnvPayload
 		mockServiceOutput []interface{}
-		expectedStatus int
-		expectedResponse string
+		expectedStatus    int
+		expectedResponse  string
 	}{
 		{
 			name: "happy path create env",
@@ -52,12 +63,11 @@ func TestCreateEnvHandler(t *testing.T) {
 				ImageID: 1,
 			},
 			mockServiceOutput: []interface{}{"testAccessLink", nil},
-			expectedStatus: http.StatusOK,
+			expectedStatus:    http.StatusOK,
 			expectedResponse: `{
 				"status": true,
 				"message": "testAccessLink"
 			}`,
-			
 		},
 		{
 			name: "unhappy path create env",
@@ -65,7 +75,7 @@ func TestCreateEnvHandler(t *testing.T) {
 				ImageID: 99,
 			},
 			mockServiceOutput: []interface{}{"", fmt.Errorf("test error")},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus:    http.StatusInternalServerError,
 			expectedResponse: `{
 				"status": false,
 				"error": "test error"
@@ -97,11 +107,11 @@ func TestCreateEnvHandler(t *testing.T) {
 			c.Request.Header.Set("Content-Type", "application/json")
 			mockHandler.RegisterRoutes(router.Group("/"))
 			mockHandler.createEnv(c)
-			
+
 			// checking the output
 			mockService.AssertCalled(t, "CreateEnv", tc.payload)
 			mockService.AssertExpectations(t)
-			
+
 			assert.Equal(t, tc.expectedStatus, w.Code)
 			assert.JSONEq(t, tc.expectedResponse, w.Body.String())
 		})
@@ -110,10 +120,10 @@ func TestCreateEnvHandler(t *testing.T) {
 
 func TestGetAllEnvsHandler(t *testing.T) {
 	tt := []struct {
-		name string
+		name              string
 		mockServiceOutput []interface{}
-		expectedStatus int
-		expectedResponse string
+		expectedStatus    int
+		expectedResponse  string
 	}{
 		{
 			name: "happy path get all envs",
@@ -146,7 +156,7 @@ func TestGetAllEnvsHandler(t *testing.T) {
 				"status": false,
 				"error": "test error"
 			}`,
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus:    http.StatusInternalServerError,
 			mockServiceOutput: []interface{}{[]types.GetImageResponse{}, fmt.Errorf("test error")},
 		},
 		{
@@ -155,7 +165,7 @@ func TestGetAllEnvsHandler(t *testing.T) {
 				"status": false,
 				"error": "no envs found"
 			}`,
-			expectedStatus: http.StatusOK,
+			expectedStatus:    http.StatusOK,
 			mockServiceOutput: []interface{}{[]types.GetImageResponse{}, nil},
 		},
 	}
@@ -178,11 +188,11 @@ func TestGetAllEnvsHandler(t *testing.T) {
 			c.Request.Header.Set("Content-Type", "application/json")
 			mockHandler.RegisterRoutes(router.Group("/"))
 			mockHandler.getAllEnvs(c)
-			
+
 			// checking the output
 			mockService.AssertCalled(t, "GetAllEnvs")
 			mockService.AssertExpectations(t)
-			
+
 			assert.Equal(t, tc.expectedStatus, w.Code)
 			assert.JSONEq(t, tc.expectedResponse, w.Body.String())
 		})
@@ -191,25 +201,24 @@ func TestGetAllEnvsHandler(t *testing.T) {
 
 func TestKillEnvHandler(t *testing.T) {
 	tt := []struct {
-		name string
-		id string
+		name              string
+		id                string
 		mockServiceOutput []interface{}
-		expectedStatus int
-		expectedResponse string
+		expectedStatus    int
+		expectedResponse  string
 	}{
 		{
-			name: "happy path kill env",
-			id: "1",
+			name:              "happy path kill env",
+			id:                "1",
 			mockServiceOutput: []interface{}{nil},
-			expectedStatus: http.StatusOK,
-			expectedResponse: `{"status": true,"message": "container stopped and removed successfully"}`,
-			
+			expectedStatus:    http.StatusOK,
+			expectedResponse:  `{"status": true,"message": "container stopped and removed successfully"}`,
 		},
 		{
-			name: "unhappy path kill env",
-			id: "99",
-			expectedResponse: `{"status": false,"error": "test error"}`,
-			expectedStatus: http.StatusInternalServerError,
+			name:              "unhappy path kill env",
+			id:                "99",
+			expectedResponse:  `{"status": false,"error": "test error"}`,
+			expectedStatus:    http.StatusInternalServerError,
 			mockServiceOutput: []interface{}{fmt.Errorf("test error")},
 		},
 	}
@@ -233,17 +242,15 @@ func TestKillEnvHandler(t *testing.T) {
 			c.Params = []gin.Param{{Key: "id", Value: tc.id}}
 			mockHandler.RegisterRoutes(router.Group("/"))
 			mockHandler.killEnv(c)
-			
+
 			// checking the output
 			mockService.AssertCalled(t, "KillEnv", tc.id)
 			mockService.AssertExpectations(t)
-			
+
 			assert.Equal(t, tc.expectedStatus, w.Code)
 			assert.JSONEq(t, tc.expectedResponse, w.Body.String())
 		})
 	}
 }
 
-
 // Get Terminal Test Pending
-

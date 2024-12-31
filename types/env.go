@@ -5,10 +5,12 @@ import (
 )
 
 type EnvService interface {
-	CreateEnv(CreateEnvPayload) (string, error)
-	KillEnv(string) error
+	CreateEnv(CreateEnvPayload) (string, string, string, error)
+	KillEnv(string) (string, error)
 	GetAllEnvs() ([]GetImageResponse, error)
 	GetTerminal(string) (dockerTypes.HijackedResponse, error)
+	AddNginxUpstream(int, string, string, string) error
+	RemoveNginxUpstream(string) error
 }
 
 type EnvStore interface {
@@ -23,7 +25,7 @@ type Env struct {
 	ID          string `json:"id"`
 	ImageName   string `json:"imageName"`
 	ContainerID string `json:"containerID"`
-	AccessLink  string  `json:"accessLink"`
+	AccessLink  string `json:"accessLink"`
 	Active      bool   `json:"active"`
 	CreatedAt   string `json:"createdAt"`
 }
@@ -33,8 +35,8 @@ type CreateEnvPayload struct {
 }
 
 type GetImageResponse struct {
-	ID   		string    `json:"id"`
-	ImageName   string `json:"imageName"`
-	AccessLink  string `json:"accessLink"`
-	CreatedAt   string `json:"createdAt"`
+	ID         string `json:"id"`
+	ImageName  string `json:"imageName"`
+	AccessLink string `json:"accessLink"`
+	CreatedAt  string `json:"createdAt"`
 }
