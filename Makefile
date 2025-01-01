@@ -1,17 +1,14 @@
-build:
-	@go build -o bin/envbox.exe cmd/main.go
-
-buildlinux:
+build-app:
 	@go build -o bin/envbox cmd/main.go
 
-test:
-	@go test -v ./...
-
-run: build
-	@./bin/envbox.exe
-
-runlinux: buildlinux
+run-app: build-app
 	@./bin/envbox
 
-migratelinux: buildlinux
+test-app:
+	@go test -v ./...
+
+migrate: build-app
 	@MIGRATE="true" ./bin/envbox
+
+run:
+	docker compose up -d
