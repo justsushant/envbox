@@ -1,6 +1,5 @@
-## Public Host
-    Unable to supply host while running the server
-    Remove the harcoded values
+## HTTPS
+    Implement the HTTPS on Nginx
 
 ## Fix the migration
     Set up a proper migration method
@@ -13,12 +12,11 @@
     - Get Terminal Pending
 
 ## User Management
-    container history management
-    better security for the containers of users
-    implement mount point feature
+     User based access
+    Container history management
+    Implement mount point feature
 
-## Coloful beautiful terminal in getTerminal
-    auto complete
-    colorful highlights
-    history (up & down arrow key)
+## Terminal page
+    Colorful highlights
+
 
