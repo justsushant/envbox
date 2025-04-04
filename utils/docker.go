@@ -10,7 +10,7 @@ import (
 )
 
 func NewDockerClient() (*client.Client, error) {
-	client, err := client.NewClientWithOpts(client.WithHost("tcp://10.128.0.2:2375"), client.WithAPIVersionNegotiation())
+	client, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("error while creating docker client: %v", err)
 	}
