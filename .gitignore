@@ -1,4 +1,2 @@
 bin/
-files/sqlite/
-files/nginxcfg/
 .env
